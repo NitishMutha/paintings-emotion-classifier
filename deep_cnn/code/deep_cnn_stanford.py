@@ -6,6 +6,7 @@
 # Nesscary Imports
 
 import tensorflow as tf
+import math
 import numpy as np
 import pandas as pd
 import time
@@ -15,9 +16,11 @@ from cnn_functions import *
 #--------- Section for importing image dataset ----------#
 # Read data from file or function
 
+
+
 # Import data and create class for it
-dataset_train = import_dataset(data_train,train_labels)
-dataset_test = import_dataset(data_test,test_labels)
+dataset_train = import_dataset(data_train)
+dataset_test = import_dataset(data_test)
 
 #--------- Section for importing image dataset ----------#
 
@@ -39,25 +42,12 @@ SAVE_MODE = False
 # Size Declarations
 OPTIMIZER = 'Adam'
 EPOCHS = 5
-batch_size = 100
+batch_size = 10
 image_dimension = 28
 image_dimension_sq = image_dimension * image_dimension
 learning_rate = 0.001
 emotion_classes = 8
 display_step = 10
-
-# Layer Parameters
-layer_1_patch_size = 5
-layer_1_features = 32
-layer_1_activation = 'relu'
-layer_1_dropout = True
-layer_1_batch_norm = True
-
-layer_2_patch_size = 5
-layer_2_features = 64
-layer_2_activation = 'relu'
-layer_2_dropout = True
-layer_2_batch_norm = True
 
 # Defining initial place holder variables
 x = tf.placeholder(tf.float32, shape=[None, image_dimension_sq])
@@ -66,14 +56,20 @@ keep_prob = tf.placeholder(tf.float32)
 phase_train = tf.placeholder(tf.bool, name='TRAINING_PHASE')
 
 # Create Convolutional Neural-Network
-layer_1 = ConvPoolLayer(x,layer_1_patch_size,layer_1_features,1,image_dimension,'relu',keep_prob,
-                        True,False,True,False,phase_train)
-layer_2 = ConvPoolLayer(layer_1.output,layer_2_patch_size,layer_2_features, layer_1_features,'relu',
-                        keep_prob,False,False,True,False,phase_train)
-layer_3 = DenselyConnectedLayer(layer_2.output,7,64,1024,'relu',keep_prob,False,False)
-layer_4 = ReadOutLayer(layer_3.output,1024,emotion_classes,keep_prob,True)
 
-y = layer_4.output
+# Convolutional Layers
+layer_1 = ConvPoolLayer(x,3,64,1,image_dimension,'relu',keep_prob,True,True,False,False,phase_train)
+layer_2 = ConvPoolLayer(layer_1.output,3,64, 64, 'relu',keep_prob,False,True,False,False,phase_train)
+layer_3 = ConvPoolLayer(layer_2.output,3,64, 64, 'relu',keep_prob,False,True,True,True,phase_train)
+layer_4 = ConvPoolLayer(layer_3.output,3,128, 64, 'relu',keep_prob,False,True,False,False,phase_train)
+layer_5 = ConvPoolLayer(layer_4.output,3,128, 128, 'relu',keep_prob,False,True,True,True,phase_train)
+
+# Fully Connected Layer
+layer_6 = DenselyConnectedLayer(layer_5.output,7,64,1024,'relu',keep_prob,True,True)
+# Read out layer
+layer_7 = ReadOutLayer(layer_6.output,1024,emotion_classes,keep_prob,False)
+# Extract final output
+y = layer_7.output
 
 # Cross-entropy calculation
 with tf.name_scope('Loss'):
@@ -133,9 +129,9 @@ with tf.Session() as sess:
                 batch_x = batch_x.reshape((batch_size, image_dimension_sq))
 
                 # Run optimization
-                sess.run(optimizer, feed_dict={x: batch_x, y: batch_y, keep_prob: 0.5, phase_train: True})
+                sess.run(optimizer, feed_dict={x: batch_x, y: batch_y, keep_prob: 0.5,phase_train: True})
                 acc, loss, summary = sess.run([accuracy, cost, merged_summary_op],
-                                              feed_dict={x: batch_x, y: batch_y, keep_prob: 1.0, phase_train:False})
+                                              feed_dict={x: batch_x, y: batch_y, keep_prob: 1.0, phase_train: False})
 
                 summary_writer.add_summary(summary, epoch * total_batch + j)
                 avg_acc += acc
@@ -176,8 +172,6 @@ with tf.Session() as sess:
             pass
 
     else:
-
-
 
         if(PLOT_MODE):
             pass

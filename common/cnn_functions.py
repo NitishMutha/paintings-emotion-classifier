@@ -3,7 +3,7 @@
 
 import tensorflow as tf
 import numpy as np
-import pandasas pd
+import pandas as pd
 import math
 from misc_functions import *
 
@@ -24,15 +24,15 @@ class ConvPoolLayer(object):
         # Layer Batch Normalisation
         if(batch_norm):
 
-            temp = conv2d(temp_calc, self.W) + self.b
+            temp = conv_2d(temp_calc, self.W) + self.b
 
-            self.z = batch_norm(temp, input_channels, training_phase, scope='bn')
+            self.z = batch_norm(temp, input_channels, training_phase)
 
         else:
-            self.z = conv2d(temp_calc, self.W) + self.b
+            self.z = conv_2d(temp_calc, self.W) + self.b
 
         # Layer Activation Function
-        if(activation=='relu')
+        if(activation=='relu'):
             self.h_conv = tf.nn.relu(self.z)
         else:
             print('!!!!Unknown activation function specified!!!!!!')
@@ -40,7 +40,7 @@ class ConvPoolLayer(object):
 
         # Layer Max-Pooling
         if(max_pool):
-            self.h_pool = max_pool_2x2(self.h_conv)
+            self.h_pool = maxpool_2by2(self.h_conv)
         else:
             self.h_pool = self.h_conv
 
@@ -53,7 +53,7 @@ class ConvPoolLayer(object):
         self.output = self.h_pool_drop
 
 
-class DenselyConnectLayer(object):
+class DenselyConnectedLayer(object):
 
     def __init__(self,input,reduced_patch_size,features,output_neurons,activation,prob,batch_norm=True,dropout=True):
 
@@ -80,7 +80,7 @@ class DenselyConnectLayer(object):
 
 
         # Activation Function
-        if(activation=='relu')
+        if(activation=='relu'):
             self.h_fc = tf.nn.relu(tf.matmul(self.h_pool_flat_bn , self.W) + self.b)
         else:
             pass
@@ -106,5 +106,4 @@ class ReadOutLayer(object):
         else:
             self.input = input
 
-        self.y = tf.matmul(self.input, self.W) + self.b
-
+        self.output = tf.matmul(self.input, self.W) + self.b

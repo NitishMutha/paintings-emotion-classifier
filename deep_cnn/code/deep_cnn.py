@@ -3,24 +3,28 @@
 # Purpose: Baseline CNN for classifying emotions in images
 # Developers: Russel Daries, Lewis Moffat, Rafiel Faruq, Hugo Phillion, Nitish Mutha
 
-# Nesscary Imports
+# Add additional directories
+import sys
+# Directory for common function files
+sys.path.insert(0, '../../common')
 
+# Nesscary Imports
 import tensorflow as tf
 import math
 import numpy as np
 import pandas as pd
 import time
+from PIL import Image
 from misc_functions import *
 from cnn_functions import *
 
 #--------- Section for importing image dataset ----------#
-# Read data from file or function
+# Read data from file or function and re-size
+image_directory = '../../Data'
+emotions = ['anger','happy','fear','neutral','sad']
+image_dimension = 200
 
-
-
-# Import data and create class for it
-dataset_train = import_dataset(data_train)
-dataset_test = import_dataset(data_test)
+dataset_train,dataset_test = resize_images(image_directory,emotions,image_dimension)
 
 #--------- Section for importing image dataset ----------#
 
@@ -43,11 +47,10 @@ SAVE_MODE = False
 OPTIMIZER = 'Adam'
 EPOCHS = 5
 batch_size = 10
-image_dimension = 28
 image_dimension_sq = image_dimension * image_dimension
 learning_rate = 0.001
-emotion_classes = 8
-display_step = 10
+emotion_classes = 5
+display_step = 1
 
 # Defining initial place holder variables
 x = tf.placeholder(tf.float32, shape=[None, image_dimension_sq])
@@ -58,18 +61,19 @@ phase_train = tf.placeholder(tf.bool, name='TRAINING_PHASE')
 # Create Convolutional Neural-Network
 
 # Convolutional Layers
-layer_1 = ConvPoolLayer(x,3,64,1,image_dimension,'relu',keep_prob,True,True,False,False,phase_train)
-layer_2 = ConvPoolLayer(layer_1.output,3,64, 64, 'relu',keep_prob,False,True,False,False,phase_train)
-layer_3 = ConvPoolLayer(layer_2.output,3,64, 64, 'relu',keep_prob,False,True,True,True,phase_train)
-layer_4 = ConvPoolLayer(layer_3.output,3,128, 64, 'relu',keep_prob,False,True,False,False,phase_train)
-layer_5 = ConvPoolLayer(layer_4.output,3,128, 128, 'relu',keep_prob,False,True,True,True,phase_train)
+layer_1 = ConvPoolLayer(x,5,64,1,image_dimension,'relu',keep_prob,True,False,False,False,phase_train)
+layer_2 = ConvPoolLayer(layer_1.output,5,64, 64,image_dimension, 'relu',keep_prob,False,False,False,False,phase_train)
+layer_3 = ConvPoolLayer(layer_2.output,5,64, 64,image_dimension, 'relu',keep_prob,False,False,True,True,phase_train)
+layer_4 = ConvPoolLayer(layer_3.output,5,128, 64,image_dimension, 'relu',keep_prob,False,False,False,False,phase_train)
+layer_5 = ConvPoolLayer(layer_4.output,5,128, 128,image_dimension, 'relu',keep_prob,False,False,True,True,phase_train)
 
 # Fully Connected Layer
-layer_6 = DenselyConnectedLayer(layer_5.output,7,64,1024,'relu',keep_prob,True,True)
+layer_6 = DenselyConnectedLayer(layer_5.output,50,128,1024,'relu',keep_prob,False,True)
 # Read out layer
-layer_7 = ReadOutLayer(layer_6.output,1024,emotion_classes,keep_prob,False)
+layer_7 = ReadOutLayer(layer_6.output,1024,emotion_classes,keep_prob,True)
 # Extract final output
 y = layer_7.output
+
 
 # Cross-entropy calculation
 with tf.name_scope('Loss'):
@@ -107,7 +111,7 @@ with tf.Session() as sess:
 
         #Write logs to Tensorboard directory
         summary_writer = tf.summary.FileWriter(logs_path, graph=tf.get_default_graph())
-        print('----Training Baseline CNN Model Running----')
+        print('----Training Deep CNN Model Running----')
         # Keep training until reach max iterations
         train_acc = 0.0
         train_loss = 0.0
@@ -126,12 +130,12 @@ with tf.Session() as sess:
                 batch_x, batch_y = dataset_train.next_batch(batch_size)
 
                 # Reshape data to get batch size by 784 tensor
-                batch_x = batch_x.reshape((batch_size, image_dimension_sq))
+                # batch_x = batch_x.reshape((batch_size, image_dimension_sq))
 
                 # Run optimization
-                sess.run(optimizer, feed_dict={x: batch_x, y: batch_y, keep_prob: 0.5,phase_train: True})
+                sess.run(optimizer, feed_dict={x: batch_x, y_: batch_y, keep_prob: 0.5,phase_train: True})
                 acc, loss, summary = sess.run([accuracy, cost, merged_summary_op],
-                                              feed_dict={x: batch_x, y: batch_y, keep_prob: 1.0, phase_train: False})
+                                              feed_dict={x: batch_x, y_: batch_y, keep_prob: 1.0, phase_train: False})
 
                 summary_writer.add_summary(summary, epoch * total_batch + j)
                 avg_acc += acc

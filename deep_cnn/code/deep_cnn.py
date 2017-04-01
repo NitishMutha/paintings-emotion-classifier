@@ -1,6 +1,6 @@
 # Group
-# Model: Baseline Convolutional Neural Network
-# Purpose: Baseline CNN for classifying emotions in images
+# Model: Deep Convolutional Neural Network
+# Purpose: Deep CNN for classifying emotions in images
 # Developers: Russel Daries, Lewis Moffat, Rafiel Faruq, Hugo Phillion, Nitish Mutha
 
 # Add additional directories
@@ -213,7 +213,9 @@ with tf.Session() as sess:
 
         if(PLOT_MODE):
             print('Plot Mode enabled.')
+            # Plotting training accuracy
             plot_image_metrics(train_acc_vec, x_label_acc, y_label_acc, filename_acc,'b')
+            # Plotting training loss
             plot_image_metrics(train_loss_vec, x_label_loss, y_label_loss, filename_loss,'r')
         else:
             print('Plot Mode disabled.')

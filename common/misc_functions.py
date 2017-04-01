@@ -1,5 +1,7 @@
 # Group
+# Model: Baseline Convolutional Neural Network
 # Purpose: Function file for storage of misccelanous functions for Baseline CNN
+# Developers: Russel Daries, Lewis Moffat, Rafiel Faruq, Hugo Phillion, Nitish Mutha
 
 import tensorflow as tf
 import numpy as np
@@ -12,6 +14,25 @@ from PIL import Image
 from tensorflow.python.framework import dtypes
 from sklearn.metrics import confusion_matrix
 
+# Weight function creation
+def weight_variables(shape):
+  ini_w = tf.truncated_normal(shape, stddev=0.1)
+  return tf.Variable(ini_w)
+
+# Bias variable function
+def bias_variables(shape):
+  ini_b = tf.constant(0.1, shape=shape)
+  return tf.Variable(ini_b)
+
+# 2D convolution function
+def conv_2d(x, W):
+  return tf.nn.conv2d(x, W, strides=[1, 1, 1, 1], padding='SAME')
+
+# Max-Pooling function
+def maxpool_2by2(x):
+  return tf.nn.max_pool(x, ksize=[1, 2, 2, 1],strides=[1, 2, 2, 1], padding='SAME')
+
+# Function to create 1-hot encoding vectors for emotion classes
 def one_hot():
 
     emotion_range = np.arange(0,5)
@@ -19,18 +40,19 @@ def one_hot():
     one_hot_vec[np.arange(5),emotion_range] = 1
     return one_hot_vec
 
+# Function to read in input images and greyscale, resize, normalize and pack into nessccary data structure
 def resize_images(image_directory,emotions,image_dimension):
 
     folder = ['train','test']
     emotion_label_count = 0
     emo_count = 0
     emo_label_vec = one_hot()
-
+    # Loop through emotions
     for emotion in emotions:
 
         # Create one-hot vector for labels for each emotion
         class_label = emo_label_vec[emo_count,:]
-
+        # Loop through folders
         for file in folder:
             emotion_images = []
             emotion_labels = []
@@ -38,7 +60,7 @@ def resize_images(image_directory,emotions,image_dimension):
 
             path = crop_directory
             dirs = os.listdir(path)
-
+            # Go through each image
             for item in dirs:
 
                 imgExts = ["jpeg"]
@@ -57,6 +79,7 @@ def resize_images(image_directory,emotions,image_dimension):
             emotion_images = np.asarray(emotion_images)
             emotion_labels = np.asarray(emotion_labels)
 
+            # Sort through each emotion
             if (emo_count==0):
                 if(file=='train'):
                     anger_train = import_dataset(emotion_images, emotion_labels)
@@ -89,30 +112,16 @@ def resize_images(image_directory,emotions,image_dimension):
 
         emo_count += 1
 
+    # Pack all emotions into one complete data structure
     dataset_train = combine_images(anger_train,  happy_train, fear_train,  neutral_train,
                         sad_train)
 
     dataset_test = combine_images(anger_test,happy_test,fear_test,
                                    neutral_test, sad_test)
 
+    # Return combined training and test set for use in CNNs
     return dataset_train,dataset_test
 
-
-
-
-def weight_variables(shape):
-  ini_w = tf.truncated_normal(shape, stddev=0.1)
-  return tf.Variable(ini_w)
-
-def bias_variables(shape):
-  ini_b = tf.constant(0.1, shape=shape)
-  return tf.Variable(ini_b)
-
-def conv_2d(x, W):
-  return tf.nn.conv2d(x, W, strides=[1, 1, 1, 1], padding='SAME')
-
-def maxpool_2by2(x):
-  return tf.nn.max_pool(x, ksize=[1, 2, 2, 1],strides=[1, 2, 2, 1], padding='SAME')
 
 class import_dataset(object):
     # class to create instance of data which has functions for manipulation such as batch sampling

@@ -208,7 +208,9 @@ with tf.Session() as sess:
 
         if(PLOT_MODE):
             print('Plot Mode enabled.')
+            # Plotting accuracy on training set
             plot_image_metrics(train_acc_vec, x_label_acc, y_label_acc, filename_acc,'b')
+            # Plotting loss on training set
             plot_image_metrics(train_loss_vec, x_label_loss, y_label_loss, filename_loss,'r')
         else:
             print('Plot Mode disabled.')

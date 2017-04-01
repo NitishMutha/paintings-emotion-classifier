@@ -185,6 +185,10 @@ with tf.Session() as sess:
         train_loss = train_loss / EPOCHS
         train_acc = train_acc / EPOCHS
 
+        # Display training accuracy and loss achieved.
+        print("Train Loss: "+ "{:.5f}".format(train_loss))
+        print("Train Accuracy: "+ "{:.5f}".format(train_acc))
+
         if(SAVE_MODE):
             print('Save mode enabled.')
             # Saving the model
@@ -211,10 +215,6 @@ with tf.Session() as sess:
         # Check the training time it took the model to complete.
         print("Training Start Time : ", start_time)
         print("Training End Time : ", end_time)
-
-        # Display training accuracy and loss achieved.
-        print("Train Loss: "+ "{:.5f}".format(train_loss))
-        print("Train Accuracy: "+ "{:.5f}".format(train_acc))
 
         if(TEST_MODEL):
 

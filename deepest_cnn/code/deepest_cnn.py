@@ -79,13 +79,13 @@ keep_prob = tf.placeholder(tf.float32)
 phase_train = tf.placeholder(tf.bool, name='phase_train')
 
 # Create Convolutional Neural-Network
-layer_1 = ConvPoolLayer(x,5,64,1,image_dimension,'relu',keep_prob,True,False,False,False,phase_train)
-layer_2 = ConvPoolLayer(layer_1.output,5,64, 64,image_dimension, 'relu',keep_prob,False,False,False,False,phase_train)
-layer_3 = ConvPoolLayer(layer_2.output,5,64, 64,image_dimension, 'relu',keep_prob,False,False,True,True,phase_train)
-layer_4 = ConvPoolLayer(layer_3.output,5,128, 64,image_dimension, 'relu',keep_prob,False,False,False,False,phase_train)
-layer_5 = ConvPoolLayer(layer_4.output,5,128, 128,image_dimension, 'relu',keep_prob,False,False,True,True,phase_train)
-layer_6 = ConvPoolLayer(layer_5.output,5,256, 128,image_dimension, 'relu',keep_prob,False,False,False,False,phase_train)
-layer_7 = ConvPoolLayer(layer_6.output,5,256, 256,image_dimension, 'relu',keep_prob,False,False,True,True,phase_train)
+layer_1 = ConvPoolLayer(x,5,64,1,image_dimension,'relu',keep_prob,phase_train,True,False,False,False)
+layer_2 = ConvPoolLayer(layer_1.output,5,64, 64,image_dimension, 'relu',keep_prob,phase_train,False,False,False,False)
+layer_3 = ConvPoolLayer(layer_2.output,5,64, 64,image_dimension, 'relu',keep_prob,phase_train,False,False,True,True)
+layer_4 = ConvPoolLayer(layer_3.output,5,128, 64,image_dimension, 'relu',keep_prob,phase_train,False,False,False,False)
+layer_5 = ConvPoolLayer(layer_4.output,5,128, 128,image_dimension, 'relu',keep_prob,phase_train,False,False,True,True)
+layer_6 = ConvPoolLayer(layer_5.output,5,256, 128,image_dimension, 'relu',keep_prob,phase_train,False,False,False,False)
+layer_7 = ConvPoolLayer(layer_6.output,5,256, 256,image_dimension, 'relu',keep_prob,phase_train,False,False,True,True)
 
 
 # Fully Connected Layer

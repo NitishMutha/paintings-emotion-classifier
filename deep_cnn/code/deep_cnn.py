@@ -123,8 +123,8 @@ saver = tf.train.Saver()
 
 with tf.Session() as sess:
     sess.run(init)
-    y_true_labels = np.argmax(dataset_test.labels, 1)
-    y_pred_labels = tf.argmax(y, 1)
+    #y_true_labels = np.argmax(dataset_test.labels, 1)
+    #y_pred_labels = tf.argmax(y, 1)
     # Condtional statement to restore the model or start training the model
     if(TRAINING_MODE):
 

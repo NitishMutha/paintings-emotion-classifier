@@ -21,7 +21,6 @@ from cnn_functions import *
 # Read data from file or function and re-size
 image_directory = '../../data'
 emotions = ['anger','happy','fear','neutral','sad']
-# emotions = ['anger']
 image_dimension = 200
 
 dataset_train,dataset_test = resize_images(image_directory,emotions,image_dimension)
@@ -33,24 +32,24 @@ logs_path = '../model'
 print('Log Path: '+ logs_path)
 
 # Model Saving directory
-model_path = '../model/tf_baseline_cnn_without_bn.ckpt'
+model_path = '../model/tf_baseline_cnn_wh_bn_nom_drop.ckpt'
 print('Model Path: ' + model_path)
 
 # Numpy variable saving directory
-np_filename = '../model/baseline_variables'
+np_filename = '../model/baseline_variables_wh_bn_nom_drop'
 
 # Confusion Matrix Name
-cf_filename =  '../model/baseline_cf_matrix'
+cf_filename =  '../model/baseline_cf_matrix_wh_bn_nom_drop'
 
 # Plot naming
 # Accuracy
 x_label_acc = 'Epoch'
 y_label_acc = 'Accuracy'
-filename_acc = '../../results/baseline_acc'
+filename_acc = '../../results/baseline_acc_wh_bn_nom_drop'
 # Loss
 x_label_loss = 'Epoch'
 y_label_loss = 'Cross-Entropy Loss'
-filename_loss = '../../results/baseline_loss'
+filename_loss = '../../results/baseline_loss_wh_bn_nom_drop'
 
 start_time = time.ctime()
 
@@ -64,7 +63,7 @@ CONFUSION_MATRIX = False
 
 # Size Declarations
 OPTIMIZER = 'Adam'
-EPOCHS = 3
+EPOCHS = 10
 batch_size_train = 150
 batch_size_test = 100
 image_dimension_sq = image_dimension * image_dimension
@@ -255,7 +254,7 @@ with tf.Session() as sess:
 
         # Restore the model for testing purposes
         print('----Test Mode Running----')
-        load_path = saver.restore(sess, model_path)
+        # load_path = saver.restore(sess, model_path)
         print("Baseline TF Model restored from file: ", model_path)
 
         saved_var = np.load(np_filename+'.npz')
@@ -263,8 +262,8 @@ with tf.Session() as sess:
 
         train_acc_vec = saved_var['training_accuracy']
         train_loss_vec = saved_var['training_loss']
-        train_acc = saved_var['train_acc_final']
-        train_loss = saved_var['train_loss_final']
+        train_acc = float(saved_var['train_acc_final'])
+        train_loss = float(saved_var['train_loss_final'])
 
         # Display training accuracy and loss achieved.
         print("Train Loss: "+ "{:.5f}".format(train_loss))
@@ -281,30 +280,34 @@ with tf.Session() as sess:
         else:
             pass
 
-        avg_loss_test = 0.0
-        avg_acc_test = 0.0
+        if(TEST_MODEL):
+            avg_loss_test = 0.0
+            avg_acc_test = 0.0
 
-        total_batch_test = int(dataset_test.num_examples / batch_size_test)
+            total_batch_test = int(dataset_test.num_examples / batch_size_test)
 
-        # Loop for number of batches for training data
-        for k in range(total_batch_test):
-            batch_x_test, batch_y_test = dataset_test.next_batch(batch_size_test)
+            # Loop for number of batches for training data
+            for k in range(total_batch_test):
+                batch_x_test, batch_y_test = dataset_test.next_batch(batch_size_test)
 
-            # Run optimization
-            acc, loss, summary = sess.run([accuracy, cost, merged_summary_op],
-                                          feed_dict={x: batch_x_test, y_: batch_y_test, keep_prob: 1.0,
-                                                     phase_train: False})
+                # Run optimization
+                acc, loss, summary = sess.run([accuracy, cost, merged_summary_op],
+                                              feed_dict={x: batch_x_test, y_: batch_y_test, keep_prob: 1.0,
+                                                         phase_train: False})
 
-            avg_acc_test += acc
-            avg_loss_test += loss
+                avg_acc_test += acc
+                avg_loss_test += loss
 
-        # Average out accuracy over batches
-        test_acc = avg_acc_test / total_batch_test
-        test_loss = avg_loss_test / total_batch_test
+            # Average out accuracy over batches
+            test_acc = avg_acc_test / total_batch_test
+            test_loss = avg_loss_test / total_batch_test
 
-        # Display training accuracy and loss achieved.
-        print("Test Loss: " + "{:.5f}".format(test_loss))
-        print("Test Accuracy: " + "{:.5f}".format(test_acc))
+            # Display training accuracy and loss achieved.
+            print("Test Loss: " + "{:.5f}".format(test_loss))
+            print("Test Accuracy: " + "{:.5f}".format(test_acc))
+
+        else:
+            pass
 
         if (PLOT_MODE):
             print('Plot Mode enabled.')
@@ -312,6 +315,3 @@ with tf.Session() as sess:
             plot_image_metrics(train_loss_vec, x_label_loss, y_label_loss, filename_loss,'r')
         else:
             print('Plot Mode disabled.')
-
-
-

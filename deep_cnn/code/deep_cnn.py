@@ -20,7 +20,7 @@ from cnn_functions import *
 
 #--------- Section for importing image dataset ----------#
 # Read data from file or function and re-size
-image_directory = '../../Data'
+image_directory = '../../data'
 emotions = ['anger','happy','fear','neutral','sad']
 image_dimension = 200
 
@@ -60,10 +60,11 @@ PLOT_MODE = True
 SAVE_MODE = True
 ENABLE_TENSORBOARD = True
 TEST_MODEL = True
+CONFUSION_MATRIX = False
 
 # Size Declarations
 OPTIMIZER = 'Adam'
-EPOCHS = 2
+EPOCHS = 10
 batch_size_train = 150
 batch_size_test = 100
 image_dimension_sq = image_dimension * image_dimension
@@ -78,8 +79,6 @@ keep_prob = tf.placeholder(tf.float32)
 phase_train = tf.placeholder(tf.bool, name='phase_train')
 
 # Create Convolutional Neural-Network
-
-# Convolutional Layers
 layer_1 = ConvPoolLayer(x,5,64,1,image_dimension,'relu',keep_prob,phase_train,True,False,False,False)
 layer_2 = ConvPoolLayer(layer_1.output,5,64, 64,image_dimension, 'relu',keep_prob,phase_train,False,False,False,False)
 layer_3 = ConvPoolLayer(layer_2.output,5,64, 64,image_dimension, 'relu',keep_prob,phase_train,False,False,True,True)

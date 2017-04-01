@@ -5,9 +5,10 @@ import tensorflow as tf
 import numpy as np
 import os,sys
 import itertools
+import matplotlib.pyplot as plt
 from PIL import Image
 from tensorflow.python.framework import dtypes
-
+from sklearn.metrics import confusion_matrix
 
 def one_hot():
 
@@ -245,12 +246,33 @@ def batch_norm(x, n_out, phase_train):
 
     return normed
 
-# Function to plot the calculated cross-entropies
-def plot_image_metrics(metric,x_label,y_label,filename):
+# Function to plot the calculated cross-entropies and accuracy
+def plot_image_metrics(metric,x_label,y_label,filename,colour):
 
-    plt.plot(metric,'ro-')
+    epochs_numbers = metric.shape[0]
+    epoch_vec = np.arange(epochs_numbers)
+    epoch_vec = epoch_vec+1
+
+    plt.plot(epoch_vec,metric,colour+'o-')
     plt.xlabel(x_label)
     plt.ylabel(y_label)
     plt.grid(True)
     plt.savefig(filename + '_metrics.pdf', bbox_inches='tight', format='pdf')
     plt.close()
+
+# Function for creating confusion matrix
+def confusion_matrix_plot(y_true_labels, y_p, name, norm = False):
+
+    matrix = confusion_matrix(y_true_labels, y_p)
+
+    if norm ==True:
+        matrix_norm = matrix.astype('float') / matrix.sum(axis=1)[:, np.newaxis]
+
+    else:
+        matrix_norm = matrix
+
+    plt.matshow(matrix_norm)
+    plt.colorbar()
+    plt.ylabel('Predicated Label')
+    plt.xlabel('True Label')
+    plt.savefig(name + '_metrics.pdf', bbox_inches='tight', format='pdf')

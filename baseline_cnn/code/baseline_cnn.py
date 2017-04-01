@@ -33,8 +33,14 @@ logs_path = '../model'
 print('Log Path: '+ logs_path)
 
 # Model Saving directory
-model_path = '../model/tf_baseline_cnn.ckpt'
+model_path = '../model/tf_baseline_cnn_without_bn.ckpt'
 print('Model Path: ' + model_path)
+
+# Numpy variable saving directory
+np_filename = '../model/baseline_variables'
+
+# Confusion Matrix Name
+cf_filename =  '../model/baseline_cf_matrix'
 
 # Plot naming
 # Accuracy
@@ -57,10 +63,9 @@ TEST_MODEL = True
 
 # Size Declarations
 OPTIMIZER = 'Adam'
-EPOCHS = 1
-batch_size_train = 100
+EPOCHS = 2
+batch_size_train = 150
 batch_size_test = 100
-
 image_dimension_sq = image_dimension * image_dimension
 learning_rate = 0.001
 emotion_classes = 5
@@ -177,35 +182,51 @@ with tf.Session() as sess:
         train_acc_vec = np.asarray(train_acc_vec)
         train_loss_vec = np.asarray(train_loss_vec)
 
+        train_loss = train_loss / EPOCHS
+        train_acc = train_acc / EPOCHS
+
+        if(SAVE_MODE):
+            print('Save mode enabled.')
+            # Saving the model
+            save_path = saver.save(sess, model_path)
+            print('TF Model saved to file: ', model_path)
+
+            np.savez(np_filename, training_accuracy=train_acc_vec,\
+                     training_loss=train_loss_vec, train_acc_final=train_acc, \
+                     train_loss_final = train_loss)
+            print('NP variables saved to file: ' + np_filename)
+            print('----Training Mode completed and saved----')
+        else:
+            print('Save mode disabled.')
+            print('Model not saved.')
+
         if(PLOT_MODE):
             print('Plot Mode enabled.')
-            plot_image_metrics(train_acc_vec, x_label_acc, y_label_acc, filename_acc)
-            plot_image_metrics(train_loss_vec, x_label_loss, y_label_loss, filename_loss)
+            plot_image_metrics(train_acc_vec, x_label_acc, y_label_acc, filename_acc,'b')
+            plot_image_metrics(train_loss_vec, x_label_loss, y_label_loss, filename_loss,'r')
         else:
             print('Plot Mode disabled.')
-
-        train_loss = train_loss/epoch
-        train_acc = train_acc/epoch
 
         end_time = time.ctime()
         # Check the training time it took the model to complete.
         print("Training Start Time : ", start_time)
         print("Training End Time : ", end_time)
 
-        if(SAVE_MODE):
-            print('Save mode enabled.')
-            # Saving the model
-            save_path = saver.save(sess, model_path)
-            print('Model saved to file: ', model_path)
-        else:
-            print('Save mode disabled.')
-            print('Model not saved.')
-
         # Display training accuracy and loss achieved.
         print("Train Loss: "+ "{:.5f}".format(train_loss))
         print("Train Accuracy: "+ "{:.5f}".format(train_acc))
 
         if(TEST_MODEL):
+
+            print('Creating confusion matrix.')
+            y_true_labels = np.argmax(dataset_test.labels, 1)
+            y_pred_labels = tf.argmax(tf.nn.softmax(y), 1)
+
+            acc,y_p= sess.run([accuracy,y_pred_labels],
+                                          feed_dict={x: dataset_test.images, y_: dataset_test.labels, keep_prob: 1.0,
+                                                     phase_train: False})
+
+            confusion_matrix_plot(y_true_labels, y_p, cf_filename, norm=True)
 
             print('Testing Model.')
 
@@ -242,7 +263,29 @@ with tf.Session() as sess:
         # Restore the model for testing purposes
         print('----Test Mode Running----')
         load_path = saver.restore(sess, model_path)
-        print("Baseline Model restored from file: ", model_path)
+        print("Baseline TF Model restored from file: ", model_path)
+
+        saved_var = np.load(np_filename+'.npz')
+        print("Baseline NP Variables restored from file: ", np_filename)
+
+        train_acc_vec = saved_var['training_accuracy']
+        train_loss_vec = saved_var['training_loss']
+        train_acc = saved_var['train_acc_final']
+        train_loss = saved_var['train_loss_final']
+
+        # Display training accuracy and loss achieved.
+        print("Train Loss: "+ "{:.5f}".format(train_loss))
+        print("Train Accuracy: "+ "{:.5f}".format(train_acc))
+
+        y_true_labels = np.argmax(dataset_test.labels, 1)
+        y_pred_labels = tf.argmax(tf.nn.softmax(y), 1)
+
+        # Calculating Predicted outputs
+        y_p = sess.run([y_pred_labels],
+                            feed_dict={x: dataset_test.images, y_: dataset_test.labels, keep_prob: 1.0,
+                                       phase_train: False})
+
+        confusion_matrix_plot(y_true_labels, y_p, cf_filename, norm=True)
 
         avg_loss_test = 0.0
         avg_acc_test = 0.0
@@ -269,6 +312,12 @@ with tf.Session() as sess:
         print("Test Loss: " + "{:.5f}".format(test_loss))
         print("Test Accuracy: " + "{:.5f}".format(test_acc))
 
+        if (PLOT_MODE):
+            print('Plot Mode enabled.')
+            plot_image_metrics(train_acc_vec, x_label_acc, y_label_acc, filename_acc,'b')
+            plot_image_metrics(train_loss_vec, x_label_loss, y_label_loss, filename_loss,'r')
+        else:
+            print('Plot Mode disabled.')
 
 
 

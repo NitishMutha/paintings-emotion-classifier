@@ -60,14 +60,15 @@ PLOT_MODE = True
 SAVE_MODE = True
 ENABLE_TENSORBOARD = True
 TEST_MODEL = True
+CONFUSION_MATRIX = False
 
 # Size Declarations
 OPTIMIZER = 'Adam'
-EPOCHS = 2
+EPOCHS = 3
 batch_size_train = 150
 batch_size_test = 100
 image_dimension_sq = image_dimension * image_dimension
-learning_rate = 0.001
+learning_rate = 0.0001
 emotion_classes = 5
 display_step = 5
 
@@ -86,7 +87,6 @@ layer_3 = DenselyConnectedLayer(layer_2.output,50,64,1024,'relu',keep_prob,False
 layer_4 = ReadOutLayer(layer_3.output,1024,emotion_classes,keep_prob,True)
 
 y = layer_4.output
-# y_out = tf.nn.softmax(y)
 
 # Cross-entropy calculation
 with tf.name_scope('Loss'):
@@ -221,15 +221,6 @@ with tf.Session() as sess:
 
         if(TEST_MODEL):
 
-            print('Creating confusion matrix.')
-
-            print('Obtaining predicted outputs')
-            y_p = sess.run([y_pred_labels],
-                                          feed_dict={x: dataset_test.images, y_: dataset_test.labels, keep_prob: 1.0,
-                                                     phase_train: False})
-            print('Plotting Confusion Matrix')
-            confusion_matrix_plot(y_true_labels, y_p, cf_filename, norm=True)
-
             print('Testing Model.')
 
             avg_loss_test = 0.0
@@ -279,15 +270,16 @@ with tf.Session() as sess:
         print("Train Loss: "+ "{:.5f}".format(train_loss))
         print("Train Accuracy: "+ "{:.5f}".format(train_acc))
 
-        y_true_labels = np.argmax(dataset_test.labels, 1)
-        y_pred_labels = tf.argmax(y_out, 1)
+        if(CONFUSION_MATRIX):
 
-        # Calculating Predicted outputs
-        y_p = sess.run([y_pred_labels],
-                            feed_dict={x: dataset_test.images, y_: dataset_test.labels, keep_prob: 1.0,
-                                       phase_train: False})
-
-        confusion_matrix_plot(y_true_labels, y_p, cf_filename, norm=True)
+            # Calculating Predicted outputs
+            y_p = sess.run([y_pred_labels],
+                                feed_dict={x: dataset_test.images, y_: dataset_test.labels, keep_prob: 1.0,
+                                           phase_train: False})
+            # Plot confusion matrix on test data
+            confusion_matrix_plot(y_true_labels, y_p, cf_filename, norm=True)
+        else:
+            pass
 
         avg_loss_test = 0.0
         avg_acc_test = 0.0

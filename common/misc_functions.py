@@ -236,7 +236,7 @@ def batch_norm(x, n_out, phase_train):
 
         with tf.control_dependencies([ema_apply_op]):
             return tf.identity(batch_mean), tf.identity(batch_var)
-
+    print('313131')
     mean, var = tf.cond(phase_train,
                         mean_var_with_update,
                         lambda: (ema.average(batch_mean), ema.average(batch_var)))
@@ -244,3 +244,13 @@ def batch_norm(x, n_out, phase_train):
     normed = tf.nn.batch_normalization(x, mean, var, beta, gamma, 1e-3)
 
     return normed
+
+# Function to plot the calculated cross-entropies
+def plot_image_metrics(metric,x_label,y_label,filename):
+
+    plt.plot(metric,'ro-')
+    plt.xlabel(x_label)
+    plt.ylabel(y_label)
+    plt.grid(True)
+    plt.savefig(filename + '_metrics.pdf', bbox_inches='tight', format='pdf')
+    plt.close()

@@ -10,7 +10,7 @@ from misc_functions import *
 
 class ConvPoolLayer(object):
 
-    def __init__(self,input,patch_size,features,input_channels,image_dimension,activation,prob,input_layer=False,batch_norm=True,max_pool=True,dropout=True,training_phase=True):
+    def __init__(self,input,patch_size,features,input_channels,image_dimension,activation,prob,phase_train,input_layer=False,batch_norm=True,max_pool=True,dropout=True):
 
         self.input = input
         self.W = weight_variables([patch_size,patch_size,input_channels,features])
@@ -26,7 +26,7 @@ class ConvPoolLayer(object):
 
             temp = conv_2d(temp_calc, self.W) + self.b
 
-            self.z = batch_norm(temp, input_channels, training_phase)
+            self.z = batch_norm(temp, input_channels, phase_train)
 
         else:
             self.z = conv_2d(temp_calc, self.W) + self.b

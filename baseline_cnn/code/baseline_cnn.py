@@ -86,7 +86,7 @@ layer_3 = DenselyConnectedLayer(layer_2.output,50,64,1024,'relu',keep_prob,False
 layer_4 = ReadOutLayer(layer_3.output,1024,emotion_classes,keep_prob,True)
 
 y = layer_4.output
-y_out = tf.nn.softmax(y)
+# y_out = tf.nn.softmax(y)
 
 # Cross-entropy calculation
 with tf.name_scope('Loss'):
@@ -119,6 +119,8 @@ saver = tf.train.Saver()
 
 with tf.Session() as sess:
     sess.run(init)
+    y_true_labels = np.argmax(dataset_test.labels, 1)
+    y_pred_labels = tf.argmax(y, 1)
     # Condtional statement to restore the model or start training the model
     if(TRAINING_MODE):
 
@@ -220,11 +222,9 @@ with tf.Session() as sess:
         if(TEST_MODEL):
 
             print('Creating confusion matrix.')
-            y_true_labels = np.argmax(dataset_test.labels, 1)
-            y_pred_labels = tf.argmax(y_out, 1)
 
             print('Obtaining predicted outputs')
-            y_p= sess.run([y_pred_labels],
+            y_p = sess.run([y_pred_labels],
                                           feed_dict={x: dataset_test.images, y_: dataset_test.labels, keep_prob: 1.0,
                                                      phase_train: False})
             print('Plotting Confusion Matrix')

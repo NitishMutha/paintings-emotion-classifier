@@ -5,6 +5,8 @@ import tensorflow as tf
 import numpy as np
 import os,sys
 import itertools
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from PIL import Image
 from tensorflow.python.framework import dtypes

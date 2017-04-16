@@ -268,22 +268,42 @@ def plot_image_metrics(metric,x_label,y_label,filename,colour):
     plt.xlabel(x_label)
     plt.ylabel(y_label)
     plt.grid(True)
-    plt.savefig(filename + '_metrics.pdf', bbox_inches='tight', format='pdf')
+    plt.savefig(filename + '_metrics.eps', bbox_inches='tight', format='eps')
     plt.close()
 
-# Function for creating confusion matrix
-def confusion_matrix_plot(y_true_labels, y_p, name, norm = False):
+def save_confusion_matrix(sess, name, data, n_classes, y_pred_cls, feed_dict_test):
+    # Get the true classifications for the test-set.
+    cls_true = data.labels
+    
+    Get the predicted classifications for the test-set.
+    cls_pred = sess.run(y_pred_cls, feed_dict=feed_dict_test)
 
-    matrix = confusion_matrix(y_true_labels, y_p)
+    # cls_true are one hot vectors, so convert to multiclass:
+    cls_true_multiclass = []
+    for image in cls_true:
+        index = np.where(image==1)
+        cls_true_multiclass.append(index[0][0])
 
-    if norm ==True:
-        matrix_norm = matrix.astype('float') / matrix.sum(axis=1)[:, np.newaxis]
+    # requre numpy array not list
+    cls_true_multiclass = np.array(cls_true_multiclass)
 
-    else:
-        matrix_norm = matrix
+    # Get the confusion matrix using sklearn.
+    cm = confusion_matrix(y_true=cls_true_multiclass,
+                          y_pred=cls_pred)
 
-    plt.matshow(matrix_norm)
+    # Print the confusion matrix as text.
+    print("confusion matrix: \n", cm)
+
+    # Plot the confusion matrix as an image.
+    plt.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
+
+    # Make adjustments to the plot.
+    plt.tight_layout()
     plt.colorbar()
-    plt.ylabel('Predicated Label')
-    plt.xlabel('True Label')
+    tick_marks = np.arange(n_classes)
+    plt.xticks(tick_marks, range(n_classes))
+    plt.yticks(tick_marks, range(n_classes))
+    plt.xlabel('Predicted')
+    plt.ylabel('True')
     plt.savefig(name + '_metrics.pdf', bbox_inches='tight', format='pdf')
+    plt.show()

@@ -22,7 +22,7 @@ from cnn_functions import *
 # Read data from file or function and re-size
 image_directory = '../../data'
 emotions = ['anger','happy','fear','neutral','sad']
-image_dimension = 200
+image_dimension = 64
 
 dataset_train,dataset_test = resize_images(image_directory,emotions,image_dimension)
 
@@ -38,6 +38,7 @@ print('Model Path: ' + model_path)
 
 # Numpy variable saving directory
 np_filename = '../model/deepest_cnn_variables_wh_bn_nom_drop'
+np_filename_yprobs = '../model/deepest_cnn_yprobs_wh_bn_nom_drop'
 
 # Confusion Matrix Name
 cf_filename =  '../model/deepest_cnn_cf_matrix_wh_bn_nom_drop'
@@ -55,16 +56,17 @@ filename_loss = '../../results/deepest_cnn_loss_wh_bn_nom_drop'
 start_time = time.ctime()
 
 # Boolean statements
-TRAINING_MODE = True
+TRAINING_MODE = False
 PLOT_MODE = True
 SAVE_MODE = True
 ENABLE_TENSORBOARD = True
 TEST_MODEL = True
 CONFUSION_MATRIX = False
+GPU = True
 
 # Size Declarations
 OPTIMIZER = 'Adam'
-EPOCHS = 10
+EPOCHS = 100
 batch_size_train = 150
 batch_size_test = 100
 image_dimension_sq = image_dimension * image_dimension
@@ -78,41 +80,55 @@ y_ = tf.placeholder(tf.float32, shape=[None, emotion_classes])
 keep_prob = tf.placeholder(tf.float32)
 phase_train = tf.placeholder(tf.bool, name='phase_train')
 
-# Create Convolutional Neural-Network
-layer_1 = ConvPoolLayer(x,5,64,1,image_dimension,'relu',keep_prob,phase_train,True,False,False,False)
-layer_2 = ConvPoolLayer(layer_1.output,5,64, 64,image_dimension, 'relu',keep_prob,phase_train,False,False,False,False)
-layer_3 = ConvPoolLayer(layer_2.output,5,64, 64,image_dimension, 'relu',keep_prob,phase_train,False,False,True,True)
-layer_4 = ConvPoolLayer(layer_3.output,5,128, 64,image_dimension, 'relu',keep_prob,phase_train,False,False,False,False)
-layer_5 = ConvPoolLayer(layer_4.output,5,128, 128,image_dimension, 'relu',keep_prob,phase_train,False,False,True,True)
-layer_6 = ConvPoolLayer(layer_5.output,5,256, 128,image_dimension, 'relu',keep_prob,phase_train,False,False,False,False)
-layer_7 = ConvPoolLayer(layer_6.output,5,256, 256,image_dimension, 'relu',keep_prob,phase_train,False,False,True,True)
-
-
-# Fully Connected Layer
-layer_8 = DenselyConnectedLayer(layer_7.output,25,256,1024,'relu',keep_prob,False,True)
-# layer_9 = ReadOutLayer(layer_8.output,1024,1024,keep_prob,False)
-# Read out layer
-layer_10 = ReadOutLayer(layer_8.output,1024,emotion_classes,keep_prob,False)
-# Extract final output
-y = layer_10.output
-
-# Cross-entropy calculation
-with tf.name_scope('Loss'):
-    cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits = y, labels = y_))
-
-# Optimizer selection
-if(OPTIMIZER=='Adam'):
-    optimizer = tf.train.AdamOptimizer(learning_rate).minimize(cost)
-elif(OPTIMIZER=='SGD'):
-    optimizer = tf.train.GradientDescentOptimizer(learning_rate).minimize(cost)
-elif(OPTIMIZER=='Momentum'):
-    optimizer = tf.train.MomentumOptimizer(learning_rate).minimize(cost)
+if(GPU):
+    # suppress log messages
+    os.environ['TF_CPP_MIN_LOG_LEVEL']='1' 
+    device = '/gpu:0'
 else:
-    optimizer = tf.train.AdamOptimizer(learning_rate).minimize(cost)
+    device = '/cpu:0'
 
-with tf.name_scope('Accuracy'):
-    correct_pred = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))
-    accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
+# To change image size, (1) change image_dimension variable above, (2) divide this number by the number of 'True's in penultimate param of layer_x's below, then this number is the first number in DenselyConnectedLayer
+with tf.device(device):
+    # Create Convolutional Neural-Network
+    layer_1 = ConvPoolLayer(x,5,64,1,image_dimension,'relu',keep_prob,phase_train,True,False,False,False)
+    layer_2 = ConvPoolLayer(layer_1.output,5,64, 64,image_dimension, 'relu',keep_prob,phase_train,False,False,False,False) 
+    layer_3 = ConvPoolLayer(layer_2.output,5,64, 64,image_dimension, 'relu',keep_prob,phase_train,False,False,True,True)
+    layer_4 = ConvPoolLayer(layer_3.output,5,128, 64,image_dimension, 'relu',keep_prob,phase_train,False,False,False,False)
+    layer_5 = ConvPoolLayer(layer_4.output,5,128, 128,image_dimension, 'relu',keep_prob,phase_train,False,False,True,True)
+    layer_6 = ConvPoolLayer(layer_5.output,5,256, 128,image_dimension, 'relu',keep_prob,phase_train,False,False,False,False)
+    layer_7 = ConvPoolLayer(layer_6.output,5,256, 256,image_dimension, 'relu',keep_prob,phase_train,False,False,True,True)
+
+
+    # Fully Connected Layer
+    layer_8 = DenselyConnectedLayer(layer_7.output,8,256,1024,'relu',keep_prob,False,True)
+    # layer_9 = ReadOutLayer(layer_8.output,1024,1024,keep_prob,False)
+    # Read out layer
+    layer_10 = ReadOutLayer(layer_8.output,1024,emotion_classes,keep_prob,False)
+    # Extract final output
+    y = layer_10.output
+
+    # For probabilities per class
+    y_probs = tf.nn.softmax(y)
+    # For confusion matrix
+    y_pred_cls = tf.argmax(y, dimension=1)
+
+    # Cross-entropy calculation
+    with tf.name_scope('Loss'):
+        cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits = y, labels = y_))
+
+    # Optimizer selection
+    if(OPTIMIZER=='Adam'):
+        optimizer = tf.train.AdamOptimizer(learning_rate).minimize(cost)
+    elif(OPTIMIZER=='SGD'):
+        optimizer = tf.train.GradientDescentOptimizer(learning_rate).minimize(cost)
+    elif(OPTIMIZER=='Momentum'):
+        optimizer = tf.train.MomentumOptimizer(learning_rate).minimize(cost)
+    else:
+        optimizer = tf.train.AdamOptimizer(learning_rate).minimize(cost)
+
+    with tf.name_scope('Accuracy'):
+        correct_pred = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))
+        accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
 
 # Create a summary to monitor cost tensor
 tf.summary.scalar("Loss", cost)
@@ -135,7 +151,8 @@ with tf.Session() as sess:
         #Write logs to Tensorboard directory
         if(ENABLE_TENSORBOARD):
             print('Tensorboard Enabled.')
-            summary_writer = tf.summary.FileWriter(logs_path, graph=tf.get_default_graph())
+            summary_writer_train = tf.summary.FileWriter(logs_path+"/train", graph=tf.get_default_graph())
+            summary_writer_test = tf.summary.FileWriter(logs_path+"/test", graph=tf.get_default_graph())
         else:
             print('Tensorboard Disabled')
 
@@ -158,14 +175,20 @@ with tf.Session() as sess:
             for j in range(total_batch_train):
 
                 batch_x_train, batch_y_train = dataset_train.next_batch(batch_size_train)
+                batch_x_test, batch_y_test = dataset_test.next_batch(batch_size_test)
 
                 # Run optimization
                 sess.run(optimizer, feed_dict={x: batch_x_train, y_: batch_y_train, keep_prob: 0.5, phase_train: True})
-                acc, loss, summary = sess.run([accuracy, cost, merged_summary_op],
+                acc, loss, summary_train = sess.run([accuracy, cost, merged_summary_op],
                                               feed_dict={x: batch_x_train, y_: batch_y_train, keep_prob: 1.0, phase_train: False})
 
-                if(ENABLE_TENSORBOARD):
-                    summary_writer.add_summary(summary, epoch * total_batch_train + j)
+                if (ENABLE_TENSORBOARD):
+                    # To plot train and test curves together
+                    _, _, summary_test = sess.run([accuracy, cost, merged_summary_op],
+                                              feed_dict={x: batch_x_test, y_: batch_y_test, keep_prob: 1.0, phase_train: False})
+
+                    summary_writer_train.add_summary(summary_train, epoch * total_batch_train + j)
+                    summary_writer_test.add_summary(summary_test, epoch * total_batch_train + j)
                 else:
                     pass
                 avg_acc += acc
@@ -251,6 +274,8 @@ with tf.Session() as sess:
                 avg_acc_test += acc
                 avg_loss_test += loss
 
+            y_probs_eval = sess.run(y_probs, feed_dict={x: batch_x_test, y_: batch_y_test, keep_prob: 1.0, phase_train: False})
+
             # Average out accuracy over batches
             test_acc = avg_acc_test / total_batch_test
             test_loss = avg_loss_test / total_batch_test
@@ -258,7 +283,7 @@ with tf.Session() as sess:
             # Display training accuracy and loss achieved.
             print("Test Loss: " + "{:.5f}".format(test_loss))
             print("Test Accuracy: " + "{:.5f}".format(test_acc))
-
+            np.save(np_filename_yprobs, y_probs_eval)
         else:
             print('Not testing model.')
     else:
@@ -287,7 +312,7 @@ with tf.Session() as sess:
                                 feed_dict={x: dataset_test.images, y_: dataset_test.labels, keep_prob: 1.0,
                                            phase_train: False})
             # Plot confusion matrix on test data
-            confusion_matrix_plot(y_true_labels, y_p, cf_filename, norm=True)
+            save_confusion_matrix(sess, cf_filename, dataset_test, emotion_classes, y_pred_cls, feed_dict)
         else:
             pass
 
@@ -329,3 +354,4 @@ with tf.Session() as sess:
 
 
 
+sess.close()

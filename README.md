@@ -1,5 +1,7 @@
 # COMPGI17_Project
-Code for Human Robot Interaction Project
+#### Nitish Mutha | Russel Daries | Rafiel Faruq | Charles Olivier | Lewis Moffat | Hugo Philion  
+
+Code for Affective Computing and Human Robot Interaction Project
 
 This repository contains:
 
